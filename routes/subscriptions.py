@@ -13,6 +13,10 @@ VALID_STATUSES = [
 ]
 
 
+def valid_status_change(old_status, new_status):
+    return new_status in VALID_STATUSES
+
+
 # Display subscriptions and create a new subscription
 @subscriptions_bp.route("/subscriptions", methods=["GET", "POST"])
 def subscriptions():
@@ -22,32 +26,18 @@ def subscriptions():
 
     if request.method == "POST":
 
-        customer_id = request.form.get("customer_id")
-        product_id = request.form.get("product_id")
-        plan_id = request.form.get("plan_id")
-        start_date = request.form.get("start_date")
-        end_date = request.form.get("end_date") or None
-        quantity = request.form.get("quantity")
-        status = request.form.get("status", "draft")
-
         try:
-            customer_id = int(customer_id)
-            product_id = int(product_id)
-            plan_id = int(plan_id)
-            quantity = int(quantity)
-
-            if quantity < 1:
-                raise ValueError
-
+            customer_id = int(request.form.get("customer_id"))
+            product_id = int(request.form.get("product_id"))
+            plan_id = int(request.form.get("plan_id"))
+            quantity = int(request.form.get("quantity"))
         except (ValueError, TypeError):
-            connection.close()
-            flash("Please enter valid customer, product, plan and quantity.", "danger")
-            return redirect(url_for("subscriptions.subscriptions"))
-
-        if not start_date or status not in VALID_STATUSES:
             connection.close()
             flash("Please enter valid subscription details.", "danger")
             return redirect(url_for("subscriptions.subscriptions"))
+
+        start_date = request.form.get("start_date")
+        end_date = request.form.get("end_date") or None
 
         customer = cursor.execute(
             "SELECT id FROM users WHERE id = ? AND role = 'customer'",
@@ -64,12 +54,12 @@ def subscriptions():
             (plan_id,)
         ).fetchone()
 
-        if not customer or not product or not plan:
+        if not customer or not product or not plan or not start_date:
             connection.close()
-            flash("Selected customer, product or plan does not exist.", "danger")
+            flash("Please select valid customer, product, plan and start date.", "danger")
             return redirect(url_for("subscriptions.subscriptions"))
 
-        if quantity < plan["minimum_quantity"]:
+        if quantity < 1 or quantity < plan["minimum_quantity"]:
             connection.close()
             flash(
                 f"Minimum quantity for this plan is {plan['minimum_quantity']}.",
@@ -95,24 +85,22 @@ def subscriptions():
         cursor.execute("""
             INSERT INTO subscriptions
             (customer_id, product_id, plan_id, start_date, end_date, quantity, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, 'draft')
         """, (
             customer_id,
             product_id,
             plan_id,
             start_date,
             end_date,
-            quantity,
-            status
+            quantity
         ))
 
         connection.commit()
         connection.close()
 
-        flash("Subscription created successfully!", "success")
+        flash("Subscription created successfully with Draft status!", "success")
         return redirect(url_for("subscriptions.subscriptions"))
 
-    # Fetch registered customers
     customers = cursor.execute("""
         SELECT id, name, email
         FROM users
@@ -120,14 +108,12 @@ def subscriptions():
         ORDER BY name
     """).fetchall()
 
-    # Fetch products
     products = cursor.execute("""
         SELECT id, name, sales_price
         FROM products
         ORDER BY name
     """).fetchall()
 
-    # Fetch plans
     plans = cursor.execute("""
         SELECT id, name, frequency, price, minimum_quantity,
                start_date, end_date
@@ -135,7 +121,6 @@ def subscriptions():
         ORDER BY name
     """).fetchall()
 
-    # Fetch subscriptions
     all_subscriptions = cursor.execute("""
         SELECT
             s.*,
@@ -172,9 +157,10 @@ def edit_subscription(subscription_id):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    subscription = cursor.execute("""
-        SELECT * FROM subscriptions WHERE id = ?
-    """, (subscription_id,)).fetchone()
+    subscription = cursor.execute(
+        "SELECT * FROM subscriptions WHERE id = ?",
+        (subscription_id,)
+    ).fetchone()
 
     if not subscription:
         connection.close()
@@ -183,30 +169,22 @@ def edit_subscription(subscription_id):
 
     if request.method == "POST":
 
-        customer_id = request.form.get("customer_id")
-        product_id = request.form.get("product_id")
-        plan_id = request.form.get("plan_id")
-        start_date = request.form.get("start_date")
-        end_date = request.form.get("end_date") or None
-        quantity = request.form.get("quantity")
-        status = request.form.get("status")
-
         try:
-            customer_id = int(customer_id)
-            product_id = int(product_id)
-            plan_id = int(plan_id)
-            quantity = int(quantity)
-
-            if quantity < 1:
-                raise ValueError
-
+            customer_id = int(request.form.get("customer_id"))
+            product_id = int(request.form.get("product_id"))
+            plan_id = int(request.form.get("plan_id"))
+            quantity = int(request.form.get("quantity"))
         except (ValueError, TypeError):
             connection.close()
             flash("Please enter valid subscription details.", "danger")
-            return redirect(
-                url_for("subscriptions.edit_subscription",
-                        subscription_id=subscription_id)
-            )
+            return redirect(url_for(
+                "subscriptions.edit_subscription",
+                subscription_id=subscription_id
+            ))
+
+        start_date = request.form.get("start_date")
+        end_date = request.form.get("end_date") or None
+        new_status = (request.form.get("status") or "").lower()
 
         customer = cursor.execute(
             "SELECT id FROM users WHERE id = ? AND role = 'customer'",
@@ -223,20 +201,47 @@ def edit_subscription(subscription_id):
             (plan_id,)
         ).fetchone()
 
-        if (
-            not customer or not product or not plan
-            or not start_date or status not in VALID_STATUSES
-            or quantity < plan["minimum_quantity"]
-            or (end_date and end_date < start_date)
-            or (plan["start_date"] and start_date < plan["start_date"])
-            or (plan["end_date"] and start_date > plan["end_date"])
-        ):
-            connection.close()
-            flash("Please check the subscription details and try again.", "danger")
-            return redirect(
-                url_for("subscriptions.edit_subscription",
-                        subscription_id=subscription_id)
+        if not customer:
+            error = "Selected customer does not exist."
+
+        elif not product:
+            error = "Selected product does not exist."
+
+        elif not plan:
+            error = "Selected plan does not exist."
+
+        elif not start_date:
+            error = "Start date is missing."
+
+        elif not valid_status_change(subscription["status"], new_status):
+            error = "Invalid subscription status."
+
+        elif quantity < 1 or quantity < plan["minimum_quantity"]:
+            error = f"Minimum quantity for this plan is {plan['minimum_quantity']}."
+
+        elif end_date and end_date < start_date:
+            error = "End date cannot be before start date."
+
+        elif (
+            (plan_id != subscription["plan_id"]
+             or start_date != subscription["start_date"])
+            and (
+                (plan["start_date"] and start_date < plan["start_date"])
+                or (plan["end_date"] and start_date > plan["end_date"])
             )
+        ):
+            error = "Selected plan is unavailable on this date."
+
+        else:
+            error = None
+
+        if error:
+            connection.close()
+            flash(error, "danger")
+            return redirect(url_for(
+                "subscriptions.edit_subscription",
+                subscription_id=subscription_id
+            ))
 
         cursor.execute("""
             UPDATE subscriptions
@@ -255,7 +260,7 @@ def edit_subscription(subscription_id):
             start_date,
             end_date,
             quantity,
-            status,
+            new_status,
             subscription_id
         ))
 
@@ -266,18 +271,23 @@ def edit_subscription(subscription_id):
         return redirect(url_for("subscriptions.subscriptions"))
 
     customers = cursor.execute("""
-        SELECT id, name, email FROM users
-        WHERE role = 'customer' ORDER BY name
+        SELECT id, name, email
+        FROM users
+        WHERE role = 'customer'
+        ORDER BY name
     """).fetchall()
 
     products = cursor.execute("""
-        SELECT id, name, sales_price FROM products ORDER BY name
+        SELECT id, name, sales_price
+        FROM products
+        ORDER BY name
     """).fetchall()
 
     plans = cursor.execute("""
         SELECT id, name, frequency, price, minimum_quantity,
                start_date, end_date
-        FROM plans ORDER BY name
+        FROM plans
+        ORDER BY name
     """).fetchall()
 
     connection.close()
@@ -302,7 +312,6 @@ def delete_subscription(subscription_id):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Do not delete subscriptions that already have invoices
     invoice = cursor.execute("""
         SELECT id FROM invoices WHERE subscription_id = ?
     """, (subscription_id,)).fetchone()
@@ -312,9 +321,10 @@ def delete_subscription(subscription_id):
         flash("Cannot delete a subscription that has invoices.", "danger")
         return redirect(url_for("subscriptions.subscriptions"))
 
-    cursor.execute("""
-        DELETE FROM subscriptions WHERE id = ?
-    """, (subscription_id,))
+    cursor.execute(
+        "DELETE FROM subscriptions WHERE id = ?",
+        (subscription_id,)
+    )
 
     deleted = cursor.rowcount
 
