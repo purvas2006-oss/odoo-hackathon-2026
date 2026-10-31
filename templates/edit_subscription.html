@@ -1,0 +1,148 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">Edit Subscription #{{ subscription.id }}</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="row">
+
+                    <!-- Customer -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Customer</label>
+
+                        <select name="customer_id" class="form-select" required>
+                            {% for customer in customers %}
+                                <option
+                                    value="{{ customer.id }}"
+                                    {% if customer.id == subscription.customer_id %}selected{% endif %}
+                                >
+                                    {{ customer.name }} ({{ customer.email }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Product -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Product</label>
+
+                        <select name="product_id" class="form-select" required>
+                            {% for product in products %}
+                                <option
+                                    value="{{ product.id }}"
+                                    {% if product.id == subscription.product_id %}selected{% endif %}
+                                >
+                                    {{ product.name }} - ₹{{ "%.2f"|format(product.sales_price) }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Plan -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Plan</label>
+
+                        <select name="plan_id" class="form-select" required>
+                            {% for plan in plans %}
+                                <option
+                                    value="{{ plan.id }}"
+                                    {% if plan.id == subscription.plan_id %}selected{% endif %}
+                                >
+                                    {{ plan.name }} ({{ plan.frequency }}) - ₹{{ "%.2f"|format(plan.price) }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Quantity</label>
+
+                        <input
+                            type="number"
+                            name="quantity"
+                            class="form-control"
+                            min="1"
+                            value="{{ subscription.quantity }}"
+                            required
+                        >
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Start Date</label>
+
+                        <input
+                            type="date"
+                            name="start_date"
+                            class="form-control"
+                            value="{{ subscription.start_date }}"
+                            required
+                        >
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">End Date</label>
+
+                        <input
+                            type="date"
+                            name="end_date"
+                            class="form-control"
+                            value="{{ subscription.end_date or '' }}"
+                        >
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Subscription Status</label>
+
+                        <select name="status" class="form-select" required>
+                            {% for status in statuses %}
+                                <option
+                                    value="{{ status }}"
+                                    {% if status == subscription.status %}selected{% endif %}
+                                >
+                                    {{ status|capitalize }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Save Changes
+                </button>
+
+                <a
+                    href="{{ url_for('subscriptions.subscriptions') }}"
+                    class="btn btn-secondary"
+                >
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

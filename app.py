@@ -9,6 +9,8 @@ from routes.dashboard import dashboard_bp
 from routes.products import products_bp
 from routes.billing import billing_bp
 from routes.plans import plans_bp
+from routes.subscriptions import subscriptions_bp
+
 
 app = Flask(__name__)
 
@@ -30,11 +32,13 @@ app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 app.register_blueprint(products_bp)
 app.register_blueprint(billing_bp)
 app.register_blueprint(plans_bp)
+app.register_blueprint(subscriptions_bp)
 
 
+# Homepage redirects to Admin Dashboard
 @app.route("/")
 def home():
-    return redirect(url_for("billing.billing_reports"))
+    return redirect(url_for("dashboard.admin_dashboard"))
 
 
 if __name__ == "__main__":

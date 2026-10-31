@@ -69,8 +69,20 @@ def create_tables():
         )
     """)
 
-    # 6. Invoices table
-    
+    # Migration: Add product_id to existing subscriptions table
+    subscription_columns = {
+        row["name"]
+        for row in cursor.execute(
+            "PRAGMA table_info(subscriptions)"
+        ).fetchall()
+    }
+
+    if "product_id" not in subscription_columns:
+        cursor.execute("""
+            ALTER TABLE subscriptions
+            ADD COLUMN product_id INTEGER REFERENCES products(id)
+        """)
+
     # 6. Invoices table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS invoices (
@@ -90,10 +102,12 @@ def create_tables():
         )
     """)
 
-    # Add missing invoice columns to existing databases
+    # Migration: Add missing invoice columns
     existing_columns = {
         row["name"]
-        for row in cursor.execute("PRAGMA table_info(invoices)").fetchall()
+        for row in cursor.execute(
+            "PRAGMA table_info(invoices)"
+        ).fetchall()
     }
 
     migrations = {
@@ -108,6 +122,7 @@ def create_tables():
             cursor.execute(
                 f"ALTER TABLE invoices ADD COLUMN {column} {definition}"
             )
+
     # 7. Payments table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS payments (
