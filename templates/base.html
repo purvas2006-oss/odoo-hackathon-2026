@@ -34,40 +34,53 @@
 
             <div class="collapse navbar-collapse" id="navbarContent">
 
-                <div class="navbar-nav me-auto">
+                {% if session.get('user_id') %}
 
-                    <a class="nav-link"
-                       href="{{ url_for('products.products') }}">
-                        Products
-                    </a>
-<a class="nav-link" href="{{ url_for('plans.plans') }}">
-    Plans
-    <a class="nav-link" href="{{ url_for('subscriptions.subscriptions') }}">
-    Subscriptions
-</a>
-</a>
-                    <a class="nav-link"
-                       href="{{ url_for('billing.billing_reports') }}">
-                        Billing Reports
-                    </a>
+                    <div class="navbar-nav me-auto">
 
-                    <a class="nav-link"
-                       href="{{ url_for('dashboard.admin_dashboard') }}">
-                        Dashboard
-                    </a>
+                        <a class="nav-link"
+                           href="{{ url_for('products.products') }}">
+                            Products
+                        </a>
 
-                </div>
+                        <a class="nav-link"
+                           href="{{ url_for('plans.plans') }}">
+                            Plans
+                        </a>
 
-                <div class="navbar-nav">
+                        <a class="nav-link"
+                           href="{{ url_for('subscriptions.subscriptions') }}">
+                            Subscriptions
+                        </a>
 
-                    {% if session.get('user_id') %}
+                        <a class="nav-link"
+                           href="{{ url_for('billing.billing_reports') }}">
+                            Billing Reports
+                        </a>
+
+                        <a class="nav-link"
+                           href="{{ url_for('dashboard.admin_dashboard') }}">
+                            Dashboard
+                        </a>
+
+                    </div>
+
+                    <div class="navbar-nav">
+                        <span class="nav-link">
+                            Welcome, {{ session.get('user_name') }}
+                        </span>
 
                         <a class="nav-link"
                            href="{{ url_for('auth.logout') }}">
                             Logout
                         </a>
+                    </div>
 
-                    {% else %}
+                {% else %}
+
+                    <div class="navbar-nav me-auto"></div>
+
+                    <div class="navbar-nav">
 
                         <a class="nav-link"
                            href="{{ url_for('auth.login') }}">
@@ -79,9 +92,9 @@
                             Register
                         </a>
 
-                    {% endif %}
+                    </div>
 
-                </div>
+                {% endif %}
 
             </div>
         </div>
