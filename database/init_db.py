@@ -70,19 +70,44 @@ def create_tables():
     """)
 
     # 6. Invoices table
+    
+    # 6. Invoices table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS invoices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             subscription_id INTEGER NOT NULL,
             invoice_number TEXT NOT NULL UNIQUE,
+            customer_id INTEGER,
             invoice_date DATE NOT NULL,
             due_date DATE,
+            subtotal REAL DEFAULT 0,
+            discount REAL DEFAULT 0,
+            tax REAL DEFAULT 0,
             total_amount REAL NOT NULL,
             status TEXT DEFAULT 'draft',
-            FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+            FOREIGN KEY (subscription_id) REFERENCES subscriptions(id),
+            FOREIGN KEY (customer_id) REFERENCES users(id)
         )
     """)
 
+    # Add missing invoice columns to existing databases
+    existing_columns = {
+        row["name"]
+        for row in cursor.execute("PRAGMA table_info(invoices)").fetchall()
+    }
+
+    migrations = {
+        "customer_id": "INTEGER REFERENCES users(id)",
+        "subtotal": "REAL DEFAULT 0",
+        "discount": "REAL DEFAULT 0",
+        "tax": "REAL DEFAULT 0"
+    }
+
+    for column, definition in migrations.items():
+        if column not in existing_columns:
+            cursor.execute(
+                f"ALTER TABLE invoices ADD COLUMN {column} {definition}"
+            )
     # 7. Payments table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS payments (
