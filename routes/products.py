@@ -1,10 +1,14 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db import get_db_connection
+from routes.dashboard import login_required, role_required
 
 products_bp = Blueprint("products", __name__)
 
+
 @products_bp.route("/products", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
 def products():
 
     connection = get_db_connection()

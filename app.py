@@ -1,23 +1,15 @@
-from flask import Flask, redirect, url_for
-
+from flask import Flask
 from config import Config
-from database.init_db import create_tables
+from database.db import get_db_connection
 
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.products import products_bp
 from routes.billing import billing_bp
 
-
-# Create Flask Application
 app = Flask(__name__)
 
-# Load Configuration
 app.config.from_object(Config)
-
-# Create Database Tables
-create_tables()
-
 
 # Register Blueprints
 app.register_blueprint(auth_bp)
@@ -26,12 +18,21 @@ app.register_blueprint(products_bp)
 app.register_blueprint(billing_bp)
 
 
-# Home Route
 @app.route("/")
 def home():
-    return redirect(url_for("auth.login"))
+    connection = get_db_connection()
+    connection.execute("SELECT 1")
+    connection.close()
+
+    return """
+    <h1>Brightloop Subscription Management System</h1>
+    <p>Flask is running successfully!</p>
+    <p>SQLite database connected successfully!</p>
+    <p>Configuration loaded successfully!</p>
+    """
 
 
-# Run Application
+print(app.url_map)
+
 if __name__ == "__main__":
     app.run(debug=True)
