@@ -8,6 +8,7 @@ from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.products import products_bp
 from routes.billing import billing_bp
+from routes.plans import plans_bp
 
 app = Flask(__name__)
 
@@ -28,6 +29,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
 app.register_blueprint(products_bp)
 app.register_blueprint(billing_bp)
+app.register_blueprint(plans_bp)
 
 
 @app.route("/")

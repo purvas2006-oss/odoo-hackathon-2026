@@ -1,0 +1,113 @@
+
+{% extends "base.html" %}
+
+{% block title %}Edit Plan{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+            <h3 class="mb-0">Edit Subscription Plan</h3>
+        </div>
+
+        <div class="card-body">
+
+            <form method="POST">
+
+                <div class="mb-3">
+                    <label class="form-label">Plan Name</label>
+                    <input type="text"
+                           name="name"
+                           class="form-control"
+                           value="{{ plan.name }}"
+                           required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Frequency</label>
+
+                    <select name="frequency"
+                            class="form-select"
+                            required>
+
+                        <option value="Daily"
+                            {% if plan.frequency == "Daily" %}selected{% endif %}>
+                            Daily
+                        </option>
+
+                        <option value="Weekly"
+                            {% if plan.frequency == "Weekly" %}selected{% endif %}>
+                            Weekly
+                        </option>
+
+                        <option value="Monthly"
+                            {% if plan.frequency == "Monthly" %}selected{% endif %}>
+                            Monthly
+                        </option>
+
+                        <option value="Yearly"
+                            {% if plan.frequency == "Yearly" %}selected{% endif %}>
+                            Yearly
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Plan Price (₹)</label>
+                    <input type="number"
+                           name="price"
+                           class="form-control"
+                           min="0"
+                           step="0.01"
+                           value="{{ plan.price }}"
+                           required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Minimum Quantity</label>
+                    <input type="number"
+                           name="minimum_quantity"
+                           class="form-control"
+                           min="1"
+                           value="{{ plan.minimum_quantity }}"
+                           required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date"
+                           name="start_date"
+                           class="form-control"
+                           value="{{ plan.start_date or '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date"
+                           name="end_date"
+                           class="form-control"
+                           value="{{ plan.end_date or '' }}">
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Save Changes
+                </button>
+
+                <a href="{{ url_for('plans.plans') }}"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
