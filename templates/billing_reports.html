@@ -1,0 +1,181 @@
+
+{% extends "base.html" %}
+
+{% block title %}Billing Reports{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Billing Reports</h2>
+            <p class="text-muted">
+                Monitor invoices, payments and outstanding balances.
+            </p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <h6 class="text-muted">Total Invoices</h6>
+                <h3>{{ invoice_summary.total_invoices }}</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <h6 class="text-muted">Total Billed</h6>
+                <h3>₹{{ "%.2f"|format(invoice_summary.total_billed) }}</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <h6 class="text-muted">Payments Received</h6>
+                <h3>₹{{ "%.2f"|format(payment_summary.total_received) }}</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <h6 class="text-muted">Total Payments</h6>
+                <h3>{{ payment_summary.total_payments }}</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Invoice Status Summary -->
+    <div class="card shadow-sm p-3 mb-4">
+
+        <h5 class="mb-3">Invoice Status Summary</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice Status</th>
+                        <th>Number of Invoices</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in invoice_summary.status_summary %}
+                    <tr>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.count }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="text-center">
+                            No invoice records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Invoice Payment Details -->
+    <div class="card shadow-sm p-3 mb-4">
+
+        <h5 class="mb-3">Invoice Payment Details</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice Number</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Total Amount</th>
+                        <th>Paid Amount</th>
+                        <th>Outstanding</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for invoice in invoice_balances %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.invoice_date }}</td>
+                        <td>{{ invoice.due_date or "-" }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.total_amount) }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.paid_amount) }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.outstanding_amount) }}</td>
+                        <td>{{ invoice.status }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No invoice records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Overdue Invoices Report -->
+    <div class="card shadow-sm p-3 mb-4">
+
+        <h5 class="mb-3 text-danger">Overdue Invoices Report</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice Number</th>
+                        <th>Customer Name</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Total Amount</th>
+                        <th>Paid Amount</th>
+                        <th>Outstanding Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for invoice in overdue_invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.customer_name }}</td>
+                        <td>{{ invoice.invoice_date }}</td>
+                        <td>{{ invoice.due_date }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.total_amount) }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.paid_amount) }}</td>
+                        <td class="text-danger fw-bold">
+                            ₹{{ "%.2f"|format(invoice.outstanding_amount) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No overdue invoices found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

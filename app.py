@@ -4,6 +4,8 @@ from database.db import get_db_connection
 
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
+from routes.products import products_bp
+from routes.billing import billing_bp
 
 app = Flask(__name__)
 
@@ -12,6 +14,8 @@ app.config.from_object(Config)
 # Register Blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
+app.register_blueprint(products_bp)
+app.register_blueprint(billing_bp)
 
 
 @app.route("/")
@@ -27,6 +31,8 @@ def home():
     <p>Configuration loaded successfully!</p>
     """
 
+
 print(app.url_map)
+
 if __name__ == "__main__":
     app.run(debug=True)
