@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template
+
+from flask import Blueprint, render_template, session, redirect, url_for, flash
 
 from models.billing_reports import (
     get_invoice_summary,
@@ -18,6 +19,18 @@ billing_bp = Blueprint(
 # Billing Reports Dashboard
 @billing_bp.route("/")
 def billing_reports():
+
+    # Check whether the user is logged in
+    if "user_id" not in session:
+        flash("Please login first.", "error")
+        return redirect(url_for("auth.login"))
+
+    # Allow only Admin and Staff
+    user_role = session.get("user_role")
+
+    if user_role not in ["admin", "staff"]:
+        flash("You are not authorized to access Billing Reports.", "error")
+        return redirect(url_for("dashboard.customer_dashboard"))
 
     # Fetch report data
     invoice_summary = get_invoice_summary()
