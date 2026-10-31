@@ -15,11 +15,28 @@ def products():
     # Add new product
     if request.method == "POST":
 
-        name = request.form["name"]
+        name = request.form["name"].strip()
         product_type = request.form["product_type"]
         sales_price = request.form["sales_price"]
         cost_price = request.form["cost_price"]
-        notes = request.form.get("notes", "")
+        notes = request.form.get("notes", "").strip()
+
+        try:
+            sales_price = float(sales_price)
+            cost_price = float(cost_price)
+
+            if sales_price < 0 or cost_price < 0:
+                raise ValueError
+
+        except ValueError:
+            connection.close()
+            flash("Please enter valid non-negative prices.", "danger")
+            return redirect(url_for("products.products"))
+
+        if not name:
+            connection.close()
+            flash("Product name is required.", "danger")
+            return redirect(url_for("products.products"))
 
         cursor.execute("""
             INSERT INTO products
@@ -30,7 +47,7 @@ def products():
         connection.commit()
         connection.close()
 
-        flash("Product added successfully!")
+        flash("Product added successfully!", "success")
         return redirect(url_for("products.products"))
 
     # Fetch all products
@@ -55,7 +72,6 @@ def products():
     variants_by_product = {}
 
     for variant in all_variants:
-
         product_id = variant["product_id"]
 
         if product_id not in variants_by_product:
@@ -70,6 +86,85 @@ def products():
     )
 
 
+# Edit Product
+@products_bp.route("/products/<int:product_id>/edit", methods=["GET", "POST"])
+def edit_product(product_id):
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Find product
+    cursor.execute(
+        "SELECT * FROM products WHERE id = ?",
+        (product_id,)
+    )
+
+    product = cursor.fetchone()
+
+    if product is None:
+        connection.close()
+        flash("Product not found.", "danger")
+        return redirect(url_for("products.products"))
+
+    # Update product
+    if request.method == "POST":
+
+        name = request.form["name"].strip()
+        product_type = request.form["product_type"]
+        notes = request.form.get("notes", "").strip()
+
+        try:
+            sales_price = float(request.form["sales_price"])
+            cost_price = float(request.form["cost_price"])
+
+            if sales_price < 0 or cost_price < 0:
+                raise ValueError
+
+        except ValueError:
+            connection.close()
+            flash("Please enter valid non-negative prices.", "danger")
+            return redirect(
+                url_for("products.edit_product", product_id=product_id)
+            )
+
+        if not name or product_type not in ["Goods", "Service"]:
+            connection.close()
+            flash("Please enter valid product details.", "danger")
+            return redirect(
+                url_for("products.edit_product", product_id=product_id)
+            )
+
+        cursor.execute("""
+            UPDATE products
+            SET name = ?,
+                product_type = ?,
+                sales_price = ?,
+                cost_price = ?,
+                notes = ?
+            WHERE id = ?
+        """, (
+            name,
+            product_type,
+            sales_price,
+            cost_price,
+            notes,
+            product_id
+        ))
+
+        connection.commit()
+        connection.close()
+
+        flash("Product updated successfully!", "success")
+        return redirect(url_for("products.products"))
+
+    connection.close()
+
+    return render_template(
+        "edit_product.html",
+        product=product
+    )
+
+
 # Add Product Variant
 @products_bp.route("/products/<int:product_id>/variants", methods=["POST"])
 def add_variant(product_id):
@@ -78,24 +173,22 @@ def add_variant(product_id):
     additional_price = request.form["additional_price"]
 
     if not variant_name or not additional_price:
-        flash("Please enter all variant details.")
+        flash("Please enter all variant details.", "danger")
         return redirect(url_for("products.products"))
 
     try:
         additional_price = float(additional_price)
 
         if additional_price < 0:
-            flash("Additional price cannot be negative.")
-            return redirect(url_for("products.products"))
+            raise ValueError
 
     except ValueError:
-        flash("Please enter a valid additional price.")
+        flash("Please enter a valid non-negative additional price.", "danger")
         return redirect(url_for("products.products"))
 
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Check whether product exists
     cursor.execute(
         "SELECT id FROM products WHERE id = ?",
         (product_id,)
@@ -105,10 +198,9 @@ def add_variant(product_id):
 
     if product is None:
         connection.close()
-        flash("Product not found.")
+        flash("Product not found.", "danger")
         return redirect(url_for("products.products"))
 
-    # Insert variant
     cursor.execute("""
         INSERT INTO product_variants
         (product_id, variant_name, additional_price)
@@ -118,8 +210,7 @@ def add_variant(product_id):
     connection.commit()
     connection.close()
 
-    flash("Product variant added successfully!")
-
+    flash("Product variant added successfully!", "success")
     return redirect(url_for("products.products"))
 
 
@@ -144,8 +235,8 @@ def delete_variant(product_id, variant_id):
     connection.close()
 
     if deleted_count:
-        flash("Product variant deleted successfully!")
+        flash("Product variant deleted successfully!", "success")
     else:
-        flash("Variant not found.")
+        flash("Variant not found.", "danger")
 
     return redirect(url_for("products.products"))

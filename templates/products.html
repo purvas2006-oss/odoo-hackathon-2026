@@ -10,17 +10,15 @@
     <h2 class="mb-4">Product Management</h2>
 
     <!-- Flash Messages -->
-    {% with messages = get_flashed_messages() %}
-        {% for message in messages %}
-            <div class="alert alert-info alert-dismissible fade show">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
                 {{ message }}
-                <button type="button"
-                        class="btn-close"
+                <button type="button" class="btn-close"
                         data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endwith %}
-
 
     <!-- Add New Product -->
     <div class="card shadow-sm mb-4">
@@ -38,59 +36,39 @@
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Product Name</label>
-
-                        <input type="text"
-                               name="name"
+                        <input type="text" name="name"
                                class="form-control"
                                placeholder="Enter product name"
                                required>
                     </div>
 
-
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Product Type</label>
-
                         <select name="product_type"
-                                class="form-select"
-                                required>
-
+                                class="form-select" required>
                             <option value="">Select Product Type</option>
                             <option value="Goods">Goods</option>
                             <option value="Service">Service</option>
-
                         </select>
                     </div>
 
-
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Sales Price (₹)</label>
-
-                        <input type="number"
-                               name="sales_price"
+                        <input type="number" name="sales_price"
                                class="form-control"
-                               min="0"
-                               step="0.01"
-                               required>
+                               min="0" step="0.01" required>
                     </div>
-
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Cost Price (₹)</label>
-
-                        <input type="number"
-                               name="cost_price"
+                        <input type="number" name="cost_price"
                                class="form-control"
-                               min="0"
-                               step="0.01"
-                               required>
+                               min="0" step="0.01" required>
                     </div>
-
 
                     <div class="col-12 mb-3">
                         <label class="form-label">Notes</label>
-
-                        <textarea name="notes"
-                                  class="form-control"
+                        <textarea name="notes" class="form-control"
                                   rows="2"
                                   placeholder="Enter product notes"></textarea>
                     </div>
@@ -106,7 +84,6 @@
         </div>
     </div>
 
-
     <!-- Available Products -->
     <div class="card shadow-sm">
 
@@ -121,7 +98,6 @@
                 <table class="table table-bordered table-hover align-middle">
 
                     <thead class="table-dark">
-
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
@@ -130,10 +106,9 @@
                             <th>Cost Price</th>
                             <th>Notes</th>
                             <th>Variants</th>
+                            <th>Actions</th>
                         </tr>
-
                     </thead>
-
 
                     <tbody>
 
@@ -142,9 +117,7 @@
                         <tr>
 
                             <td>{{ product.id }}</td>
-
                             <td>{{ product.name }}</td>
-
                             <td>{{ product.product_type }}</td>
 
                             <td>
@@ -157,13 +130,11 @@
 
                             <td>{{ product.notes or "-" }}</td>
 
-
-                            <!-- Variants Section -->
+                            <!-- Variants -->
                             <td style="min-width: 230px;">
 
                                 {% set product_variants =
                                     variants_by_product.get(product.id, []) %}
-
 
                                 {% if product_variants %}
 
@@ -179,7 +150,6 @@
                                                 + ₹{{ "%.2f"|format(variant.additional_price) }}
                                             </div>
 
-                                            <!-- Delete Variant -->
                                             <form method="POST"
                                                   action="{{ url_for(
                                                       'products.delete_variant',
@@ -207,24 +177,22 @@
 
                                 {% endif %}
 
-
-                                <!-- Add New Variant -->
+                                <!-- Add Variant -->
                                 <form method="POST"
-                                      action="{{ url_for('products.add_variant', product_id=product.id) }}">
+                                      action="{{ url_for(
+                                          'products.add_variant',
+                                          product_id=product.id
+                                      ) }}">
 
-                                    <input type="text"
-                                           name="variant_name"
+                                    <input type="text" name="variant_name"
                                            class="form-control form-control-sm mb-2"
                                            placeholder="Variant name"
                                            required>
 
-                                    <input type="number"
-                                           name="additional_price"
+                                    <input type="number" name="additional_price"
                                            class="form-control form-control-sm mb-2"
                                            placeholder="Additional price"
-                                           min="0"
-                                           step="0.01"
-                                           required>
+                                           min="0" step="0.01" required>
 
                                     <button type="submit"
                                             class="btn btn-success btn-sm">
@@ -235,12 +203,23 @@
 
                             </td>
 
+                            <!-- Product Actions -->
+                            <td>
+                                <a href="{{ url_for(
+                                    'products.edit_product',
+                                    product_id=product.id
+                                ) }}"
+                                   class="btn btn-warning btn-sm">
+                                    Edit Product
+                                </a>
+                            </td>
+
                         </tr>
 
                         {% else %}
 
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="8" class="text-center">
                                 No products available.
                             </td>
                         </tr>
@@ -252,7 +231,6 @@
                 </table>
 
             </div>
-
         </div>
     </div>
 
