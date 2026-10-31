@@ -101,3 +101,41 @@ def get_invoice_balances():
 
     finally:
         connection.close()
+# 4. Get overdue invoice report
+def get_overdue_invoices():
+    connection = get_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                i.invoice_number,
+                u.name AS customer_name,
+                i.invoice_date,
+                i.due_date,
+                i.total_amount,
+                COALESCE(SUM(p.amount), 0) AS paid_amount,
+                MAX(
+                    i.total_amount - COALESCE(
+                        (
+                            SELECT SUM(p2.amount)
+                            FROM payments p2
+                            WHERE p2.invoice_id = i.id
+                        ), 0
+                    ), 0
+                ) AS outstanding_amount
+            FROM invoices i
+            JOIN users u ON i.customer_id = u.id
+            LEFT JOIN payments p ON i.id = p.invoice_id
+            WHERE i.due_date < date('now')
+              AND LOWER(i.status) NOT IN ('draft', 'paid', 'cancelled')
+            GROUP BY i.id
+            HAVING outstanding_amount > 0
+            ORDER BY i.due_date ASC
+        """)
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    finally:
+        connection.close()

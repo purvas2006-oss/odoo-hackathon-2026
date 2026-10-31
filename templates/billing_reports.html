@@ -84,7 +84,7 @@
 
     </div>
 
-    <!-- Invoice Outstanding Details -->
+    <!-- Invoice Payment Details -->
     <div class="card shadow-sm p-3 mb-4">
 
         <h5 class="mb-3">Invoice Payment Details</h5>
@@ -119,6 +119,53 @@
                     <tr>
                         <td colspan="7" class="text-center">
                             No invoice records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Overdue Invoices Report -->
+    <div class="card shadow-sm p-3 mb-4">
+
+        <h5 class="mb-3 text-danger">Overdue Invoices Report</h5>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice Number</th>
+                        <th>Customer Name</th>
+                        <th>Invoice Date</th>
+                        <th>Due Date</th>
+                        <th>Total Amount</th>
+                        <th>Paid Amount</th>
+                        <th>Outstanding Amount</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for invoice in overdue_invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.customer_name }}</td>
+                        <td>{{ invoice.invoice_date }}</td>
+                        <td>{{ invoice.due_date }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.total_amount) }}</td>
+                        <td>₹{{ "%.2f"|format(invoice.paid_amount) }}</td>
+                        <td class="text-danger fw-bold">
+                            ₹{{ "%.2f"|format(invoice.outstanding_amount) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No overdue invoices found.
                         </td>
                     </tr>
                     {% endfor %}
